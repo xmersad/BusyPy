@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+import argparse
+import sys
+
+def cat(file_paths, numbered_lines=False, show_ends=False, show_tabs=False):
+    for file_path in file_paths:
+        try:
+            with open(file_path, 'r') as file:
+                print(f"==== File: {file_path} ====")
+                for line_number, line in enumerate(file, start=1):
+                    formatted_line = line.rstrip()
+                    if show_ends:
+                        formatted_line += '$'
+                    if show_tabs:
+                        formatted_line = formatted_line.expandtabs()
+                    if numbered_lines:
+                        print(f"{line_number}: {formatted_line}")
+                    else:
+                        print(formatted_line)
+        except FileNotFoundError:
+            print(f"Error: File '{file_path}' not found.")
+        except IOError as e:
+            print(f"Error: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='cat command with Python')
+    parser.add_argument('files', nargs='+', help='Files to concatenate')
+    parser.add_argument('-n', '--number', action='store_true', help='Number the output lines')
+    parser.add_argument('-e', '--show-ends', action='store_true', help='Display $ at end of each line')
+    parser.add_argument('-T', '--show-tabs', action='store_true', help='Display TAB characters as ^I')
+
+    args = parser.parse_args()
+
+    cat(args.files, numbered_lines=args.number, show_ends=args.show_ends, show_tabs=args.show_tabs)
+
+if __name__ == "__main__":
+    main()

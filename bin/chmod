@@ -1,0 +1,94 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+import stat
+
+def chmod(file_path, mode_str, recursive=False, verbose=False):
+    try:
+        # اگر ورودی عددی باشد، به عنوان مود مستقیم در نظر گرفته می‌شود
+        if mode_str.isdigit():
+            mode = int(mode_str, 8)
+        else:
+            mode = os.stat(file_path).st_mode
+            for op in mode_str:
+                if op == 'u':
+                    mode = mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+                elif op == 'g':
+                    mode = mode | stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP
+                elif op == 'o':
+                    mode = mode | stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH
+                elif op == 'a':
+                    mode = mode | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
+                elif op == '+':
+                    mode = mode | get_mode_from_str(mode_str[1:], True)
+                    break
+                elif op == '-':
+                    mode = mode & ~get_mode_from_str(mode_str[1:], False)
+                    break
+                elif op == '=':
+                    mode = get_mode_from_str(mode_str[1:], True)
+                    break
+                else:
+                    raise ValueError(f"Invalid mode operator: {op}")
+
+        os.chmod(file_path, mode)
+
+        if verbose:
+            print(f"Changed mode of '{file_path}' to {oct(stat.S_IMODE(os.stat(file_path).st_mode))}")
+
+        if recursive and os.path.isdir(file_path):
+            for root, dirs, files in os.walk(file_path):
+                for directory in dirs:
+                    dir_path = os.path.join(root, directory)
+                    os.chmod(dir_path, mode)
+                    if verbose:
+                        print(f"Changed mode of '{dir_path}' to {oct(stat.S_IMODE(os.stat(dir_path).st_mode))}")
+
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    os.chmod(file_path, mode)
+                    if verbose:
+                        print(f"Changed mode of '{file_path}' to {oct(stat.S_IMODE(os.stat(file_path).st_mode))}")
+
+    except FileNotFoundError:
+        print(f"Error: File or directory '{file_path}' not found.")
+    except PermissionError:
+        print(f"Error: Permission denied for '{file_path}'.")
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def get_mode_from_str(mode_str, add=True):
+    mode = 0
+    for char in mode_str:
+        if char == 'r':
+            mode |= stat.S_IRUSR
+        elif char == 'w':
+            mode |= stat.S_IWUSR
+        elif char == 'x':
+            mode |= stat.S_IXUSR
+        else:
+            raise ValueError(f"Invalid mode character: {char}")
+
+    if add:
+        return mode
+    else:
+        return ~mode & 0o777
+
+def main():
+    parser = argparse.ArgumentParser(description='chmod command with Python')
+    parser.add_argument('file_path', metavar='file_path', type=str, help='File or directory path')
+    parser.add_argument('mode', metavar='mode', type=str, help='Permission mode (e.g., u+rwx, go-r, a=x)')
+    parser.add_argument('-R', '--recursive', action='store_true', help='Change files and directories recursively')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Print the changed mode for each file and directory')
+
+    args = parser.parse_args()
+
+    chmod(file_path=args.file_path, mode_str=args.mode, recursive=args.recursive, verbose=args.verbose)
+
+if __name__ == "__main__":
+    main()
+
+

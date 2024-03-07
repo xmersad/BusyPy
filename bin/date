@@ -1,0 +1,46 @@
+#!/usr/bin/python3
+
+import argparse
+from datetime import datetime
+
+def get_date(format_str="%Y-%m-%d %H:%M:%S"):
+    try:
+        current_time = datetime.now()
+        formatted_date = current_time.strftime(format_str)
+        return formatted_date
+    except Exception as e:
+        return f"An error occurred: {e}"
+
+def main():
+    parser = argparse.ArgumentParser(description='date command with Python and datetime module')
+    parser.add_argument('-u', '--utc', action='store_true', help='Display time in UTC')
+    parser.add_argument('-R', '--rfc-2822', action='store_true', help='Display date and time in RFC 2822 format')
+    parser.add_argument('-I', '--iso-8601', action='store_true', help='Display date and time in ISO 8601 format')
+    parser.add_argument('-r', '--rfc-3339', action='store_true', help='Display date and time in RFC 3339 format')
+    parser.add_argument('-f', '--format', type=str, help='Display date and time using custom format')
+
+    args = parser.parse_args()
+
+    if args.utc:
+        current_time = datetime.utcnow()
+    else:
+        current_time = datetime.now()
+
+    try:
+        if args.rfc_2822:
+            print(current_time.strftime("%a, %d %b %Y %H:%M:%S %z"))
+        elif args.iso_8601:
+            print(current_time.isoformat())
+        elif args.rfc_3339:
+            print(current_time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+        elif args.format:
+            print(current_time.strftime(args.format))
+        else:
+            print(current_time.strftime("%a %b %d %H:%M:%S %Z %Y"))
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
+

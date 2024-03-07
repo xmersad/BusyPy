@@ -1,0 +1,64 @@
+#!/usr/bin/python3
+
+
+import argparse
+import os
+import shutil
+
+def copy(source, destination, force=False, interactive=False, preserve=False, recursive=False, verbose=False):
+    try:
+        if not os.path.exists(source):
+            print(f"Error: '{source}' not found.")
+            return
+
+        if os.path.isdir(source) and not recursive:
+            print(f"Error: '{source}' is a directory. Use -r or --recursive to copy directories.")
+            return
+
+        if interactive and os.path.exists(destination):
+            response = input(f"Do you want to overwrite '{destination}'? (y/n): ").lower()
+            if response != 'y':
+                print("Operation canceled.")
+                return
+
+        if verbose:
+            print(f"Copying '{source}' to '{destination}'")
+
+        if os.path.isdir(source):
+            shutil.copytree(source, destination, symlinks=not preserve)
+        else:
+            shutil.copy2(source, destination)
+
+        if preserve:
+            shutil.copystat(source, destination)
+
+        print(f"Successfully copied '{source}' to '{destination}'")
+
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except FileNotFoundError:
+        print(f"Error: '{source}' not found.")
+    except shutil.SameFileError:
+        print(f"Error: Source and destination are the same.")
+    except FileExistsError:
+        print(f"Error: Destination '{destination}' already exists. Use -f or --force to overwrite.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='cp command with Python')
+    parser.add_argument('source', help='Source file or directory')
+    parser.add_argument('destination', help='Destination file or directory')
+    parser.add_argument('-f', '--force', action='store_true', help='Force copy, overwrite destination if it exists')
+    parser.add_argument('-i', '--interactive', action='store_true', help='Interactive copy, prompt before overwriting')
+    parser.add_argument('-p', '--preserve', action='store_true', help='Preserve file attributes during copy')
+    parser.add_argument('-r', '--recursive', action='store_true', help='Copy directories recursively')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+
+    args = parser.parse_args()
+
+    copy(args.source, args.destination, force=args.force, interactive=args.interactive, preserve=args.preserve, recursive=args.recursive, verbose=args.verbose)
+
+if __name__ == "__main__":
+    main()
+

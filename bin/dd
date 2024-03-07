@@ -1,0 +1,60 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+import shutil
+
+def convert_size_to_bytes(size_str):
+    size_str = size_str.upper()
+    size_mapping = {'K': 1024, 'M': 1024 ** 2, 'G': 1024 ** 3, 'T': 1024 ** 4}
+    
+    for suffix, factor in size_mapping.items():
+        if size_str.endswith(suffix):
+            return int(size_str[:-1]) * factor
+    return int(size_str)
+
+def dd(input_file, output_file, block_size=512, count=None, seek=0, skip=0):
+    try:
+        block_size_bytes = convert_size_to_bytes(str(block_size))
+        seek_bytes = seek * block_size_bytes
+        skip_bytes = skip * block_size_bytes
+
+        with open(input_file, 'rb') as source:
+            with open(output_file, 'wb') as destination:
+                if skip > 0:
+                    source.seek(skip_bytes)
+
+                if seek > 0:
+                    destination.seek(seek_bytes)
+
+                shutil.copyfileobj(source, destination, block_size_bytes * count)
+
+        print(f"Copy completed: {count} blocks copied")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='dd command with Python and shutil module')
+    parser.add_argument('input_file', metavar='input_file', type=str, help='Input file')
+    parser.add_argument('output_file', metavar='output_file', type=str, help='Output file')
+    parser.add_argument('block_size', metavar='block_size', type=str, help='Block size (e.g., 512, 1K, 2M)')
+    parser.add_argument('-c', '--count', type=int, help='Number of blocks to copy')
+    parser.add_argument('seek', metavar='seek_blocks', type=int, default=0, help='Skip input blocks')
+    parser.add_argument('skip', metavar='skip_blocks', type=int, default=0, help='Seek output blocks')
+
+    args = parser.parse_args()
+
+    # Validate input file existence
+    if not os.path.isfile(args.input_file):
+        print(f"Error: Input file '{args.input_file}' not found.")
+        return
+
+    # Validate output file existence or create it
+    if not os.path.isfile(args.output_file):
+        open(args.output_file, 'a').close()
+
+    dd(input_file=args.input_file, output_file=args.output_file, block_size=args.block_size, count=args.count, seek=args.seek, skip=args.skip)
+
+if __name__ == "__main__":
+    main()
+
