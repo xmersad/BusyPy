@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+import time
+
+def touch(file, create=False, atime=None, mtime=None, verbose=False):
+    try:
+        if os.path.exists(file):
+            os.utime(file, (atime, mtime))
+            if verbose:
+                print(f"Successfully touched file '{file}'")
+
+        elif create:
+            with open(file, 'a'):
+                os.utime(file, (atime, mtime))
+            if verbose:
+                print(f"Successfully created and touched file '{file}'")
+        else:
+            print(f"Error: File '{file}' not found. Use -c or --create to create the file.")
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='touch command with Python')
+    parser.add_argument('file', help='File to touch')
+    parser.add_argument('-c', '--create', action='store_true', help='Create the file if it does not exist')
+    parser.add_argument('-a', '--atime', type=float, help='Access time in seconds since the epoch')
+    parser.add_argument('-m', '--mtime', type=float, help='Modification time in seconds since the epoch')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+
+    args = parser.parse_args()
+
+    # دریافت زمان فعلی در صورتی که زمان مشخص نشده باشد
+    current_time = time.time()
+    atime = args.atime if args.atime is not None else current_time
+    mtime = args.mtime if args.mtime is not None else current_time
+
+    touch(args.file, create=args.create, atime=atime, mtime=mtime, verbose=args.verbose)
+
+if __name__ == "__main__":

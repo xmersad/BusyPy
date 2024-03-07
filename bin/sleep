@@ -1,0 +1,36 @@
+#!/usr/bin/python3
+
+
+import argparse
+import time
+
+def sleep(seconds, verbose=False, quiet=False):
+    try:
+        time.sleep(seconds)
+
+        if not quiet:
+            if verbose:
+                print(f"Slept for {seconds} seconds.")
+            else:
+                print("Done sleeping.")
+
+    except ValueError:
+        print(f"Error: Invalid value for seconds. Please enter a valid numerical value.")
+    except KeyboardInterrupt:
+        print("Sleep interrupted by user.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='sleep command with Python')
+    parser.add_argument('seconds', type=float, help='Number of seconds to sleep')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+    parser.add_argument('-q', '--quiet', action='store_true', help='Quiet mode, do not display non-error messages')
+
+    args = parser.parse_args()
+
+    sleep(args.seconds, verbose=args.verbose, quiet=args.quiet)
+
+if __name__ == "__main__":
+    main()
+

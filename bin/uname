@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+import argparse
+import platform
+
+def get_uname(system=False, node=False, release=False, version=False, machine=False, processor=False):
+    uname_info = platform.uname()
+
+    result = []
+
+    if system:
+        result.append(f"System: {uname_info.system}")
+    if node:
+        result.append(f"Node name: {uname_info.node}")
+    if release:
+        result.append(f"Release: {uname_info.release}")
+    if version:
+        result.append(f"Version: {uname_info.version}")
+    if machine:
+        result.append(f"Machine: {uname_info.machine}")
+    if processor:
+        result.append(f"Processor: {uname_info.processor}")
+
+    return '\n'.join(result)
+
+def main():
+    parser = argparse.ArgumentParser(description='uname command with Python and platform module')
+    parser.add_argument('-s', '--kernel-name', action='store_true', help='Print the kernel name')
+    parser.add_argument('-n', '--nodename', action='store_true', help='Print the network node hostname')
+    parser.add_argument('-r', '--kernel-release', action='store_true', help='Print the kernel release')
+    parser.add_argument('-v', '--kernel-version', action='store_true', help='Print the kernel version')
+    parser.add_argument('-m', '--machine', action='store_true', help='Print the machine hardware name')
+    parser.add_argument('-p', '--processor', action='store_true', help='Print the processor type')
+
+    args = parser.parse_args()
+
+    if not any(vars(args).values()):
+        # If no options are specified, print all information
+        print(get_uname(system=True, node=True, release=True, version=True, machine=True, processor=True))
+    else:
+        # Print only the specified information
+        print(get_uname(system=args.kernel_name, node=args.nodename, release=args.kernel_release,
+                        version=args.kernel_version, machine=args.machine, processor=args.processor))
+
+if __name__ == "__main__":
+    main()
+

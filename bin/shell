@@ -1,0 +1,62 @@
+#!/usr/bin/python3
+
+
+import os
+
+class BusypyShell:
+    def __init__(self):
+        self.username = os.getlogin()
+        self.hostname = os.uname().nodename
+        self.cwd = os.getcwd()
+        self.command_paths = ["/bin", "/usr/bin", "/sbin"]
+
+    def get_prompt(self):
+        return f"Busypy $ "
+
+    def execute_command(self, command):
+        try:
+            os.system(command)
+        except Exception as e:
+            print(f"Error executing command: {e}")
+
+    def search_command(self, command):
+        for path in self.command_paths:
+            full_path = os.path.join(path, command)
+            if os.path.exists(full_path):
+                return full_path
+        return None
+
+    def auto_complete_command(self, partial_command):
+        matching_commands = [cmd for cmd in os.listdir("/bin") if cmd.startswith(partial_command)]
+        return matching_commands
+
+    def init_shell(self):
+        print("Welcome to Busypy Shell")
+        print(self.get_prompt(), end="")
+
+    def main_loop(self):
+        while True:
+            user_input = input().strip()
+            if user_input.lower() == "exit":
+                break
+            elif user_input:
+                if user_input.endswith(" "):
+                    # Auto-complete command if the user ends with a space
+                    partial_command = user_input.rstrip(" ")
+                    matching_commands = self.auto_complete_command(partial_command)
+                    if matching_commands:
+                        print("\n".join(matching_commands))
+                        continue
+                cmd_path = self.search_command(user_input.split()[0])
+                if cmd_path:
+                    self.execute_command(user_input)
+                else:
+                    print(f"Command not found: {user_input.split()[0]}")
+
+            print(self.get_prompt(), end="")
+
+if __name__ == "__main__":
+    busypy_shell = BusypyShell()
+    busypy_shell.init_shell()
+    busypy_shell.main_loop()
+

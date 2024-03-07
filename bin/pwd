@@ -1,0 +1,39 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+
+def pwd(logical=False, physical=False, quiet=False):
+    try:
+        # گزینه -L: نمایش مسیر فیزیکی (پیش‌فرض)
+        if not logical and not physical:
+            current_path = os.getcwd()
+
+        # گزینه -P: نمایش مسیر منطقی
+        elif logical:
+            current_path = os.path.realpath(os.getcwd())
+
+        # گزینه -q: حالت ساکت، تنها خروجی مسیر را نمایش می‌دهد
+        if not quiet:
+            print(current_path)
+
+    except FileNotFoundError:
+        print(f"Error: Current working directory not found.")
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='pwd command with Python')
+    parser.add_argument('-L', '--logical', action='store_true', help='Display logical path')
+    parser.add_argument('-P', '--physical', action='store_true', help='Display physical path')
+    parser.add_argument('-q', '--quiet', action='store_true', help='Quiet mode, only display the path')
+
+    args = parser.parse_args()
+
+    pwd(logical=args.logical, physical=args.physical, quiet=args.quiet)
+
+if __name__ == "__main__":
+    main()
+

@@ -1,0 +1,38 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+
+def remove_directory(directory, recursive=False, ignore_errors=False, verbose=False):
+    try:
+        if recursive:
+            os.removedirs(directory)
+        else:
+            os.rmdir(directory)
+
+        if verbose:
+            print(f"Successfully removed directory '{directory}'")
+
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except FileNotFoundError:
+        print(f"Error: '{directory}' not found.")
+    except OSError as e:
+        if not ignore_errors:
+            print(f"An error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='rmdir command with Python')
+    parser.add_argument('directory', help='Directory to remove')
+    parser.add_argument('-r', '--recursive', action='store_true', help='Remove directories and their contents recursively')
+    parser.add_argument('-i', '--ignore-errors', action='store_true', help='Ignore errors, continue removing even if errors occur')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+
+    args = parser.parse_args()
+
+    remove_directory(args.directory, recursive=args.recursive, ignore_errors=args.ignore_errors, verbose=args.verbose)
+
+if __name__ == "__main__":
+    main()

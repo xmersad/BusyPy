@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+import time
+
+def tail(file, num_lines=10, follow=False, verbose=False, quiet=False, timestamp=False):
+    try:
+        with open(file, 'r') as f:
+            lines = f.readlines()
+
+        if follow:
+            print(f"--- Tailing {file} ---")
+            while True:
+                with open(file, 'r') as f:
+                    new_lines = f.readlines()[-num_lines:]
+                if new_lines != lines:
+                    formatted_lines = ''.join(new_lines)
+                    if not quiet:
+                        if timestamp:
+                            current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                            print(f"{current_time} - {formatted_lines}")
+                        else:
+                            print(formatted_lines)
+                    lines = new_lines
+                time.sleep(1)
+
+        else:
+            lines = lines[-num_lines:]
+
+            if verbose:
+                print(f"--- Contents of {file} ---")
+                print(''.join(lines))
+                print("-------------------------")
+            else:
+                formatted_lines = ''.join(lines)
+                if not quiet:
+                    if timestamp:
+                        current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        print(f"{current_time} - {formatted_lines}")
+                    else:
+                        print(formatted_lines)
+
+    except FileNotFoundError:
+        print(f"Error: File '{file}' not found.")
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='tail command with Python')
+    parser.add_argument('file', help='File to display')
+    parser.add_argument('-n', '--num-lines', type=int, default=10, help='Number of lines to display')
+    parser.add_argument('-f', '--follow', action='store_true', help='Output appended data as the file grows')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+    parser.add_argument('-q', '--quiet', action='store_true', help='Quiet mode, do not display non-error messages')
+    parser.add_argument('-t', '--timestamp', action='store_true', help='Display timestamp with each line')
+
+    args = parser.parse_args()
+
+    tail(args.file, num_lines=args.num_lines, follow=args.follow, verbose=args.verbose, quiet=args.quiet, timestamp=args.timestamp)
+
+if __name__ == "__main__":
+    main()
+
