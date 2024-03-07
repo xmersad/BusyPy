@@ -1,0 +1,44 @@
+#!/usr/bin/python3
+
+import argparse
+import re
+
+def grep(pattern, file_name, invert_match=False, ignore_case=False, count=False):
+    try:
+        with open(file_name, 'r') as file:
+            lines = file.readlines()
+
+            matching_lines = []
+            for line_number, line in enumerate(lines, start=1):
+                match = re.search(pattern, line, flags=re.IGNORECASE if ignore_case else 0)
+                if (match and not invert_match) or (invert_match and not match):
+                    matching_lines.append((line_number, line))
+
+            if count:
+                print(f"Total matching lines: {len(matching_lines)}")
+            else:
+                for line_number, line in matching_lines:
+                    print(f"{file_name}:{line_number}:{line.strip()}")
+
+    except FileNotFoundError:
+        print(f"Error: File '{file_name}' not found.")
+    except PermissionError:
+        print(f"Error: Permission denied for file '{file_name}'.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='grep command with Python and re module')
+    parser.add_argument('pattern', metavar='pattern', type=str, help='Pattern to search for')
+    parser.add_argument('file', metavar='file', type=str, help='File to search in')
+    parser.add_argument('-v', '--invert-match', action='store_true', help='Invert the sense of matching')
+    parser.add_argument('-i', '--ignore-case', action='store_true', help='Ignore case distinctions')
+    parser.add_argument('-c', '--count', action='store_true', help='Print only a count of matching lines')
+
+    args = parser.parse_args()
+
+    grep(pattern=args.pattern, file_name=args.file, invert_match=args.invert_match, ignore_case=args.ignore_case, count=args.count)
+
+if __name__ == "__main__":
+    main()
+

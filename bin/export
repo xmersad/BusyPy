@@ -1,0 +1,39 @@
+#!/usr/bin/python3
+
+import os
+import sys
+
+import os
+import sys
+
+def set_environment_variable(command):
+    try:
+        _, variable = command.split(" ", 1)
+        var_name, var_value = variable.split("=")
+        os.environ[var_name] = var_value
+        print(f"Variable {var_name} set to {var_value}")
+    except ValueError:
+        print("Invalid export command. Usage: export varname=value")
+
+def echo_environment_variable(var_name):
+    var_value = os.environ.get(var_name)
+    if var_value is not None:
+        print(f"{var_name}={var_value}")
+    else:
+        print(f"Variable {var_name} not found")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python script.py 'export varname=value' or python script.py 'echo varname'")
+        sys.exit(1)
+
+    command = sys.argv[1]
+
+    if command.startswith("export "):
+        set_environment_variable(command)
+    elif command.startswith("echo "):
+        _, var_name = command.split(" ", 1)
+        echo_environment_variable(var_name)
+    else:
+        print("Invalid command. Use 'export varname=value' or 'echo varname'")
+

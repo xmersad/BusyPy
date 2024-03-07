@@ -1,0 +1,37 @@
+#!/usr/bin/python3
+
+
+import argparse
+import sys
+
+def echo(strings, newline=True, escape=False, backspace=False, color=None):
+    result = ' '.join(strings)
+
+    if escape:
+        result = result.encode('unicode_escape').decode('utf-8')
+
+    if backspace:
+        result = result.replace('\b', '')
+
+    if color:
+        result = f"\033[{color}m{result}\033[0m"
+
+    if newline:
+        sys.stdout.write(result + '\n')
+    else:
+        sys.stdout.write(result)
+
+def main():
+    parser = argparse.ArgumentParser(description='echo command with Python')
+    parser.add_argument('strings', nargs='+', help='Strings to display')
+    parser.add_argument('-n', '--no-newline', action='store_false', help='Do not output the trailing newline')
+    parser.add_argument('-e', '--escape', action='store_true', help='Enable interpretation of backslash escapes')
+    parser.add_argument('-b', '--backspace', action='store_true', help='Remove backslashes')
+    parser.add_argument('-c', '--color', help='Set text color (e.g., 31 for red)')
+
+    args = parser.parse_args()
+
+    echo(args.strings, newline=args.no_newline, escape=args.escape, backspace=args.backspace, color=args.color)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+import subprocess
+import argparse
+
+def run_dmesg(all_messages=False, level=None, facility=None, time_format=None, colorize=False):
+    try:
+        command = ['dmesg']
+
+        if all_messages:
+            command.append('-a')
+
+        if level:
+            command.extend(['-l', level])
+
+        if facility:
+            command.extend(['-f', facility])
+
+        if time_format:
+            command.extend(['--time-format', time_format])
+
+        if colorize:
+            command.append('--color')
+
+        result = subprocess.check_output(command, text=True)
+        print(result)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e.output}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='Custom implementation of dmesg command in Python')
+    parser.add_argument('-a', '--all', action='store_true', help='Display all messages')
+    parser.add_argument('-l', '--level', choices=['emerg', 'alert', 'crit', 'err', 'warning', 'notice', 'info', 'debug'], help='Filter messages by level')
+    parser.add_argument('-f', '--facility', help='Filter messages by facility')
+    parser.add_argument('--time-format', help='Specify the time format for timestamps')
+    parser.add_argument('--color', action='store_true', help='Colorize the output')
+    
+    args = parser.parse_args()
+
+    run_dmesg(all_messages=args.all, level=args.level, facility=args.facility, time_format=args.time_format, colorize=args.color)
+
+if __name__ == "__main__":
+    main()
+
