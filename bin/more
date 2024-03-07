@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+
+import argparse
+from pygments import highlight
+from pygments.lexers import guess_lexer, TextLexer
+from pygments.formatters import TerminalFormatter
+import sys
+import os
+
+def display_file(file_path, line_numbers=False, highlight_syntax=False):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+            if highlight_syntax:
+                lexer = guess_lexer(content)
+                content = highlight(content, lexer, TerminalFormatter())
+            
+            lines = content.split('\n')
+            
+            if line_numbers:
+                for i, line in enumerate(lines, start=1):
+                    print(f"{i}: {line}")
+            else:
+                for line in lines:
+                    print(line)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def more(file_path, line_numbers=False, highlight_syntax=False):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.readlines()
+
+            page_size = 20
+            current_line = 0
+
+            while current_line < len(content):
+                for i in range(current_line, min(current_line + page_size, len(content))):
+                    print(content[i].strip())
+
+                current_line += page_size
+
+                user_input = input("Press Enter for more, 'q' to quit: ")
+                if user_input.lower() == 'q':
+                    break
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='more command with Python and pygments')
+    parser.add_argument('file', metavar='file', type=str, help='File to display')
+    parser.add_argument('-n', '--line-numbers', action='store_true', help='Display line numbers')
+    parser.add_argument('-s', '--syntax-highlight', action='store_true', help='Syntax highlight using pygments')
+
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.file):
+        print(f"Error: File '{args.file}' not found.")
+        sys.exit(1)
+
+    if args.line_numbers or args.syntax_highlight:
+        display_file(file_path=args.file, line_numbers=args.line_numbers, highlight_syntax=args.syntax_highlight)
+    else:
+        more(file_path=args.file)
+
+if __name__ == "__main__":
+    main()
+
+

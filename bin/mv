@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+
+import argparse
+import os
+import shutil
+
+def move(source, destination, force=False, interactive=False, preserve=False, verbose=False):
+    try:
+        if interactive and os.path.exists(destination):
+            response = input(f"Do you want to overwrite '{destination}'? (y/n): ").lower()
+            if response != 'y':
+                print("Operation canceled.")
+                return
+
+        if verbose:
+            print(f"Moving '{source}' to '{destination}'")
+
+        shutil.move(source, destination)
+
+        if preserve:
+            shutil.copystat(source, destination)
+
+        print(f"Successfully moved '{source}' to '{destination}'")
+
+    except FileNotFoundError:
+        print(f"Error: '{source}' not found.")
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='mv command with Python')
+    parser.add_argument('source', help='Source file or directory')
+    parser.add_argument('destination', help='Destination file or directory')
+    parser.add_argument('-f', '--force', action='store_true', help='Force move, overwrite destination if it exists')
+    parser.add_argument('-i', '--interactive', action='store_true', help='Interactive move, prompt before overwriting')
+    parser.add_argument('-p', '--preserve', action='store_true', help='Preserve file attributes during move')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+
+    args = parser.parse_args()
+
+    move(args.source, args.destination, force=args.force, interactive=args.interactive, preserve=args.preserve, verbose=args.verbose)
+
+if __name__ == "__main__":
+    main()
+

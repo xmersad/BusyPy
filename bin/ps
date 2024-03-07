@@ -1,0 +1,54 @@
+#!/usr/bin/python3
+
+import argparse
+import psutil
+from tabulate import tabulate
+
+def ps_command(all_processes=False, user=None, sort_by_cpu=False, sort_by_memory=False, verbose=False):
+    try:
+        # دریافت لیست پردازه‌ها
+        processes = list(psutil.process_iter(['pid', 'name', 'username', 'status', 'cpu_percent', 'memory_percent']))
+
+        # فیلتر کردن بر اساس گزینه‌ها
+        if not all_processes:
+            processes = filter(lambda x: x.info['username'] == user, processes)
+
+        # مرتب‌سازی بر اساس گزینه‌های مرتب‌سازی
+        if sort_by_cpu:
+            processes = sorted(processes, key=lambda x: x.info['cpu_percent'], reverse=True)
+        elif sort_by_memory:
+            processes = sorted(processes, key=lambda x: x.info['memory_percent'], reverse=True)
+
+        # نمایش اطلاعات
+        process_list = []
+        for process in processes:
+            info = process.info
+            process_list.append([info['pid'], info['name'], info['username'], info['status'], info['cpu_percent'], info['memory_percent']])
+
+        headers = ["PID", "Name", "Username", "Status", "CPU %", "Memory %"]
+        if process_list:
+            if verbose:
+                print(tabulate(process_list, headers, tablefmt="grid"))
+            else:
+                print(tabulate(process_list, headers[:4], tablefmt="grid"))
+        else:
+            print("No processes found.")
+
+    except psutil.Error as e:
+        print(f"Error: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='ps command with Python')
+    parser.add_argument('-a', '--all', action='store_true', help='Display information about all processes')
+    parser.add_argument('-u', '--user', type=str, help='Display information about processes owned by a specific user')
+    parser.add_argument('--sort-cpu', action='store_true', help='Sort processes by CPU usage')
+    parser.add_argument('--sort-memory', action='store_true', help='Sort processes by memory usage')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+
+    args = parser.parse_args()
+
+    ps_command(all_processes=args.all, user=args.user, sort_by_cpu=args.sort_cpu, sort_by_memory=args.sort_memory, verbose=args.verbose)
+
+if __name__ == "__main__":
+    main()
+

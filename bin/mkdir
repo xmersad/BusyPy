@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+import argparse
+import os
+
+def make_directory(directory, parents=False, exist_ok=False, mode=0o777, verbose=False):
+    try:
+        os.makedirs(directory, mode=mode, exist_ok=exist_ok)
+
+        if verbose:
+            print(f"Successfully created directory '{directory}'")
+
+    except PermissionError:
+        print(f"Error: Permission denied. Check if you have the required permissions.")
+    except FileExistsError:
+        print(f"Error: Directory '{directory}' already exists. Use -p or --parents to create parent directories or -o or --exist-ok to suppress errors.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def main():
+    parser = argparse.ArgumentParser(description='mkdir command with Python')
+    parser.add_argument('directory', help='Directory to create')
+    parser.add_argument('-p', '--parents', action='store_true', help='Create parent directories as needed')
+    parser.add_argument('-o', '--exist-ok', action='store_true', help='Suppress error if the directory already exists')
+    parser.add_argument('-m', '--mode', type=int, help='Set permissions for the directory in octal format (default is 0o777)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode, print detailed information')
+
+    args = parser.parse_args()
+
+    # تعیین مقدار پیش‌فرض برای مد
+    mode = args.mode if args.mode else 0o777
+
+    make_directory(args.directory, parents=args.parents, exist_ok=args.exist_ok, mode=mode, verbose=args.verbose)
+
+if __name__ == "__main__":
+    main()

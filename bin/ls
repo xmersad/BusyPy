@@ -1,0 +1,71 @@
+#!/usr/bin/python3
+
+import os
+import argparse
+from datetime import datetime
+
+def list_files(directory='.', all_files=False, long_format=False, human_readable=False, sort_by=None, reverse=False):
+    try:
+        files = os.listdir(directory)
+    except FileNotFoundError:
+        print(f"Error: Directory '{directory}' not found.")
+        return
+
+    if not all_files:
+        files = [file for file in files if not file.startswith('.')]
+
+    if sort_by == 'size':
+        files.sort(key=lambda x: os.path.getsize(os.path.join(directory, x)), reverse=reverse)
+    elif sort_by == 'time':
+        files.sort(key=lambda x: os.path.getmtime(os.path.join(directory, x)), reverse=reverse)
+
+    if long_format:
+        print("Total files:", len(files))
+        print("Permissions\tLinks\tOwner\tGroup\tSize\tModified\tName")
+        for file in files:
+            file_path = os.path.join(directory, file)
+            stat_info = os.stat(file_path)
+            permissions = oct(stat_info.st_mode)[-3:]
+            owner = stat_info.st_uid
+            group = stat_info.st_gid
+            size = stat_info.st_size if not human_readable else convert_size(stat_info.st_size)
+            modified_time = datetime.fromtimestamp(stat_info.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+            print(f"{permissions}\t{stat_info.st_nlink}\t{owner}\t{group}\t{size}\t{modified_time}\t{file}")
+    else:
+        for file in files:
+            print(file)
+
+def convert_size(size_in_bytes):
+    # Convert bytes to human-readable format
+    size = size_in_bytes
+    for suffix in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024.0:
+            break
+        size /= 1024.0
+    return f"{size:.1f} {suffix}"
+
+def main():
+    parser = argparse.ArgumentParser(description='ls command with Python')
+    parser.add_argument('directory', nargs='?', default='.', help='Directory to list (default: current directory)')
+    parser.add_argument('-a', '--all', action='store_true', help='Show hidden files')
+    parser.add_argument('-l', '--long', action='store_true', help='Use a long listing format')
+    parser.add_argument('-H', '--human-readable', action='store_true', help='Print sizes in human-readable format')
+    parser.add_argument('-S', '--sort-size', action='store_true', help='Sort by file size')
+    parser.add_argument('-t', '--sort-time', action='store_true', help='Sort by modification time')
+    parser.add_argument('-r', '--reverse', action='store_true', help='Reverse order of sort')
+
+    args = parser.parse_args()
+
+    if args.sort_size and args.sort_time:
+        parser.error("Cannot use both --sort-size and --sort-time.")
+
+    sort_by = None
+    if args.sort_size:
+        sort_by = 'size'
+    elif args.sort_time:
+        sort_by = 'time'
+
+    list_files(args.directory, all_files=args.all, long_format=args.long, human_readable=args.human_readable, sort_by=sort_by, reverse=args.reverse)
+
+if __name__ == "__main__":
+    main()
