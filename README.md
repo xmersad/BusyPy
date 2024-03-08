@@ -14,8 +14,8 @@ Busypy is filesystem that wrote by Python and you can use and develop it
 ## Usage
 
 - copy or write files  in destition path
-- For using busypy.img [click here](#)
 - Compile Python3 for your architecture ([How Cross-Compiling Python](#))
+- Create link to your Python3-Binary in /usr/bin
 - Compile C Library for your architecture ([How Cross-Compiling C Library](#))
 ## Support
 
