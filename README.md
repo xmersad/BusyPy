@@ -1,10 +1,10 @@
 # BusyPy 
 ####
 
-Busypy is filesystem that wrote by Python and you can use and develop it. 
-All programs of BusyPy are wrote by python and you dont need compile any programs in /bin | /sbin.
-BusyPy idea is derived from busybox. 
-BusyPy support a few programs including coreutils,system programs... 
+- Busypy is filesystem that wrote by Python and you can use and develop it. 
+- All programs of BusyPy are wrote by python and you dont need compile any programs in /bin | /sbin.
+- BusyPy idea is derived from busybox. 
+- BusyPy support a few programs including coreutils,system programs... 
 
 
 
