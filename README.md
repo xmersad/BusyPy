@@ -23,3 +23,7 @@
 
 For support, email mersad234962b@gmail.com.
 
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
