@@ -19,11 +19,12 @@
 - Compile Python3 for your architecture ([How Cross-Compiling Python](#))
 - Create link to your Python3-Binary in /usr/bin
 - Compile C Library for your architecture ([How Cross-Compiling C Library](#))
-## Support
-
-For support, email mersad234962b@gmail.com.
 
 
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
+
+## Support
+
+For support, email mersad234962b@gmail.com. 
