@@ -134,5 +134,3 @@ cat /proc/self/mounts
 
 * **License:** MIT — see `LICENSE`.
 * **Support / Contact:** `xmersadkarimi@gmail.com`
-
----
