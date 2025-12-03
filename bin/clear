@@ -1,0 +1,24 @@
+#!/usr/bin/python3
+"""
+A drop‑in replacement for `clear`, using Python’s builtin curses module
+to fetch and emit the terminal’s clear‐screen control sequence.
+"""
+import sys
+import curses
+
+def clear_screen():
+    # Initialize terminfo database for the current terminal
+    curses.setupterm()
+    # Get the clear‐screen capability
+    clear_seq = curses.tigetstr('clear')
+    if clear_seq:
+        # Emit it
+        sys.stdout.buffer.write(clear_seq)
+    else:
+        # Fallback to ANSI clear+home
+        sys.stdout.write('\033[2J\033[H')
+    sys.stdout.flush()
+
+if __name__ == '__main__':
+    clear_screen()
+

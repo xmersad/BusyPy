@@ -1,62 +1,98 @@
 #!/usr/bin/python3
 
-
 import os
+import shlex
+import getpass
+import pwd
+import pwd
 
 class BusypyShell:
     def __init__(self):
-        self.username = os.getlogin()
+        # Determine username with fallback
+        try:
+            self.username = getpass.getuser()
+        except Exception:
+            try:
+                self.username = pwd.getpwuid(os.getuid()).pw_name
+            except Exception:
+                self.username = "root"
         self.hostname = os.uname().nodename
-        self.cwd = os.getcwd()
         self.command_paths = ["/bin", "/usr/bin", "/sbin"]
 
     def get_prompt(self):
-        return f"Busypy $ "
+        return f"{self.username}@{self.hostname} Busypy$ "
 
-    def execute_command(self, command):
-        try:
-            os.system(command)
-        except Exception as e:
-            print(f"Error executing command: {e}")
-
-    def search_command(self, command):
+    def search_command(self, cmd):
+        # Return full path if executable exists
         for path in self.command_paths:
-            full_path = os.path.join(path, command)
-            if os.path.exists(full_path):
+            full_path = os.path.join(path, cmd)
+            if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
                 return full_path
         return None
 
-    def auto_complete_command(self, partial_command):
-        matching_commands = [cmd for cmd in os.listdir("/bin") if cmd.startswith(partial_command)]
-        return matching_commands
+    def execute_command(self, user_input):
+        # Split input into arguments safely
+        args = shlex.split(user_input)
+        cmd = args[0]
+        full_path = self.search_command(cmd)
+        if not full_path:
+            print(f"Command not found: {cmd}")
+            return
+        # Fork and exec manually to avoid subprocess dependency
+        try:
+            pid = os.fork()
+        except OSError as e:
+            print(f"Fork failed: {e}")
+            return
+        if pid == 0:
+            # In child, replace process with the command
+            try:
+                os.execve(full_path, args, os.environ)
+            except Exception as e:
+                print(f"Execution failed: {e}")
+                os._exit(1)
+        else:
+            # In parent, wait for the child to finish
+            _, status = os.waitpid(pid, 0)
+            # Optionally, process status
+            return
+
+    def auto_complete_command(self, partial):
+        matches = []
+        for path in self.command_paths:
+            try:
+                for cmd in os.listdir(path):
+                    if cmd.startswith(partial):
+                        matches.append(cmd)
+            except FileNotFoundError:
+                continue
+        return matches
 
     def init_shell(self):
-        print("Welcome to Busypy Shell")
-        print(self.get_prompt(), end="")
+        print(f"Welcome to Busypy Shell, {self.username} on {self.hostname}")
 
     def main_loop(self):
         while True:
-            user_input = input().strip()
-            if user_input.lower() == "exit":
+            try:
+                user_input = input(self.get_prompt()).strip()
+            except EOFError:
+                print()
                 break
-            elif user_input:
-                if user_input.endswith(" "):
-                    # Auto-complete command if the user ends with a space
-                    partial_command = user_input.rstrip(" ")
-                    matching_commands = self.auto_complete_command(partial_command)
-                    if matching_commands:
-                        print("\n".join(matching_commands))
-                        continue
-                cmd_path = self.search_command(user_input.split()[0])
-                if cmd_path:
-                    self.execute_command(user_input)
-                else:
-                    print(f"Command not found: {user_input.split()[0]}")
+            if not user_input:
+                continue
+            if user_input.lower() in ("exit", "quit"):
+                break
+            # Auto-complete if trailing space
+            if user_input.endswith(' '):
+                partial = user_input.rstrip(' ')
+                matches = self.auto_complete_command(partial)
+                if matches:
+                    print("  ".join(matches))
+                continue
+            # Execute
+            self.execute_command(user_input)
 
-            print(self.get_prompt(), end="")
-
-if __name__ == "__main__":
-    busypy_shell = BusypyShell()
-    busypy_shell.init_shell()
-    busypy_shell.main_loop()
+shell = BusypyShell()
+shell.init_shell()
+shell.main_loop()
 

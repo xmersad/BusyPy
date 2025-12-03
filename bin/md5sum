@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+"""
+Python implementation of md5sum using builtin hashlib.
+Usage: python3 md5sum.py <file1> [file2 ...]
+"""
+import sys
+import hashlib
+
+BUFFER_SIZE = 8192
+
+def md5sum_file(path):
+    md5 = hashlib.md5()
+    try:
+        with open(path, 'rb') as f:
+            while True:
+                data = f.read(BUFFER_SIZE)
+                if not data:
+                    break
+                md5.update(data)
+        return md5.hexdigest()
+    except FileNotFoundError:
+        return None
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} <file> [file2 ...]")
+        sys.exit(1)
+
+    for filepath in sys.argv[1:]:
+        digest = md5sum_file(filepath)
+        if digest is None:
+            print(f"md5sum: {filepath}: No such file or directory")
+        else:
+            print(f"{digest}  {filepath}")
+

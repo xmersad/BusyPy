@@ -1,0 +1,87 @@
+#!/etc/python/x86_64/usr/bin/python3.12
+# English comments only
+
+import os
+import sys
+import signal
+import time
+import ctypes
+import ctypes.util
+
+# Load libc for mount syscalls
+libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+
+# Mount flags
+MS_BIND = 4096
+
+# Syscall mount wrapper
+def mount_tmpfs(source, target, fstype='tmpfs', flags=0, options=''):
+    source_b = source.encode() if source else None
+    target_b = target.encode()
+    fstype_b = fstype.encode() if fstype else None
+    options_b = options.encode() if options else None
+    ret = libc.mount(source_b, target_b, fstype_b, flags, options_b)
+    return ret
+
+def reap_zombies(signum, frame):
+    """SIGCHLD handler to reap zombie processes"""
+    try:
+        while True:
+            pid, _ = os.waitpid(-1, os.WNOHANG)
+            if pid == 0:
+                break
+    except ChildProcessError:
+        pass
+
+signal.signal(signal.SIGCHLD, reap_zombies)
+
+# Mount points to configure
+mounts = [
+    # (source, target) tmpfs then bind
+    ('tmpfs', '/usr'),
+    ('/etc/python/x86_64/usr', '/usr'),
+    ('tmpfs', '/lib'),
+    ('/etc/clib/x86_64', '/lib'),
+    ('tmpfs', '/site-package'),
+    ('/etc/python/x86_64/usr/lib/python3.12/site-packages', '/site-package'),
+]
+
+# 1) Ensure all target dirs exist
+for _, target in mounts:
+    try:
+        os.makedirs(target, exist_ok=True)
+    except Exception:
+        pass
+
+# 2) Perform mounts in sequence
+for src, tgt in mounts:
+    if src == 'tmpfs':
+        if mount_tmpfs('tmpfs', tgt) < 0:
+            err = ctypes.get_errno()
+            print(f"mount tmpfs {tgt} failed: {os.strerror(err)}", file=sys.stderr)
+    else:
+        if libc.mount(src.encode(), tgt.encode(), None, MS_BIND, None) < 0:
+            err = ctypes.get_errno()
+            print(f"bind mount {src} → {tgt} failed: {os.strerror(err)}", file=sys.stderr)
+
+# 3) Update Python path to search /site-package first
+sys.path.insert(0, '/site-package')
+
+# 4) Short delay
+time.sleep(0.5)
+
+# 5) Fork & exec shell under Python
+try:
+    pid = os.fork()
+    if pid == 0:
+        os.execl('/usr/bin/python3', 'python3', '/bin/shell')
+        print("execl python3 failed", file=sys.stderr)
+        sys.exit(1)
+except OSError as e:
+    print(f"fork failed: {e}", file=sys.stderr)
+    sys.exit(1)
+
+# 6) Parent: stay alive and reap children
+while True:
+    signal.pause()
+

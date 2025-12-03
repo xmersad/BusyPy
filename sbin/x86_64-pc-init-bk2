@@ -1,0 +1,133 @@
+#!/etc/python/x86_64/usr/bin/python3
+
+import os
+import sys
+import signal
+import ctypes
+import ctypes.util
+import shutil
+import time
+
+# load libc for mount and umount syscalls
+libc = ctypes.CDLL(ctypes.util.find_library('c'), use_errno=True)
+
+# bind umount and umount2
+_umount  = libc.umount
+_umount.argtypes  = [ctypes.c_char_p]
+_umount.restype   = ctypes.c_int
+
+_umount2 = libc.umount2
+_umount2.argtypes = [ctypes.c_char_p, ctypes.c_int]
+_umount2.restype  = ctypes.c_int
+
+# bind mount and mount
+_mount = libc.mount
+_mount.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_ulong, ctypes.c_char_p]
+_mount.restype  = ctypes.c_int
+
+# flags
+MS_BIND    = 4096
+MNT_DETACH = 2
+
+def reap_zombies(signum, frame):
+    """SIGCHLD handler to reap zombie processes"""
+    while True:
+        try:
+            pid, _ = os.waitpid(-1, os.WNOHANG)
+            if pid == 0:
+                break
+        except OSError:
+            break
+
+def mount_fs(source, target, fstype, flags=0, options=""):
+    """Mount filesystem using libc.mount syscall"""
+    src = source.encode() if source else None
+    tgt = target.encode()
+    fs  = fstype.encode() if fstype else None
+    opts= options.encode() if options else None
+    return _mount(src, tgt, fs, flags, opts)
+
+def cleanup_old_root(path="/old_root"):
+    """Recursively detach and remove all mounts under old_root, then delete it."""
+    if not os.path.exists(path):
+        return
+
+    mounts = []
+    # read mounts
+    with open("/proc/self/mounts", "r") as f:
+        for line in f:
+            parts = line.split()
+            mount_point = parts[1]
+            if mount_point.startswith(path + "/") or mount_point == path:
+                mounts.append(mount_point)
+
+    # sort by descending length so deeper mounts are unmounted first
+    mounts.sort(key=lambda s: len(s), reverse=True)
+
+    # detach each mount
+    for mnt in mounts:
+        ret = _umount2(mnt.encode(), MNT_DETACH)
+        err = ctypes.get_errno()
+        if ret != 0:
+            print(f"warning: umount2('{mnt}') failed: errno {err}", file=sys.stderr)
+      #  else:
+       #     print(f"detached mount {mnt}")
+
+    # finally remove the directory tree
+    try:
+        shutil.rmtree(path)
+  #      print(f"removed {path}")
+    except Exception as e:
+        print(f"error removing {path}: {e}", file=sys.stderr)
+
+def main():
+    # install SIGCHLD handler
+    signal.signal(signal.SIGCHLD, reap_zombies)
+
+    # mount tmpfs on /usr and bind python libs
+    os.makedirs("/usr", exist_ok=True)
+    if mount_fs("tmpfs", "/usr", "tmpfs") < 0:
+        print("mount tmpfs /usr failed", file=sys.stderr)
+    if mount_fs("/etc/python/arm64/usr", "/usr", None, MS_BIND) < 0:
+        print("bind mount /etc/python/... to /usr failed", file=sys.stderr)
+
+    os.makedirs("/lib", exist_ok=True)
+    if mount_fs(f"/etc/clib/x86_64", "/lib", None, MS_BIND) < 0:
+        print("bind mount /etc/clib/x86_64 to /lib failed", file=sys.stderr)
+
+
+    # mount proc filesystem
+    os.makedirs("/proc", exist_ok=True)
+    if mount_fs("proc", "/proc", "proc") < 0:
+        print("mount proc /proc failed", file=sys.stderr)
+    else:
+        print("mounted proc on /proc")
+
+    # mount sysfs filesystem
+    os.makedirs("/sys", exist_ok=True)
+    if mount_fs("sysfs", "/sys", "sysfs") < 0:
+        print("mount sysfs /sys failed", file=sys.stderr)
+    else:
+        print("mounted sysfs on /sys")
+
+    # clean up old_root if present
+    cleanup_old_root("/old_root")
+
+    # short delay before spawning shell
+    time.sleep(0.5)
+
+    # fork and exec shell under Python
+    try:
+        pid = os.fork()
+        if pid == 0:
+            os.execl("/usr/bin/python3", "python3", "/bin/shell")
+        while True:
+            signal.pause()
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except Exception as e:
+        print(f"Init error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+main()
+
