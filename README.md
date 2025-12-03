@@ -3,16 +3,13 @@
 **BusyPy** is a minimal, Python-first root filesystem and init framework for *cross-architecture* deployments.
 It provides a shared rootfs layout (NFS-exportable) that lets heterogeneous targets (e.g. x86_64, aarch64) run the *same* userland scripts while resolving native interpreters and C libraries per-target at boot. BusyPy’s core programs are Python scripts / small Python applications, so userland programs normally do **not** require per-architecture compilation.
 
----
 
-## Key ideas (short)
+## Key ideas 
 
 * One canonical, server-side rootfs tree holds per-architecture runtimes under architecture-scoped subtrees (e.g. `/etc/python/aarch64`, `/etc/libc/aarch64`).
 * On boot, the target’s Python-based `init` composes a local runtime namespace using `tmpfs` + `MS_BIND` mounts so `/usr` and `/lib` resolve to that target’s native interpreter and shared libs.
 * User scripts on `/bin` are identical bytes on the server (single source), and their shebang `#!/usr/bin/python3` resolves to the native interpreter on each client.
 * Interpreters are ELF-patched during staging (PT_INTERP & RUNPATH) so they work after the client assembles `/lib`.
-
----
 
 ## Features
 
@@ -22,7 +19,6 @@ It provides a shared rootfs layout (NFS-exportable) that lets heterogeneous targ
 * Deterministic, syscall-level early userspace (`init`) that does not depend on higher level tools during early boot.
 * Reproducible staging (patchelf + readelf outputs and checksums preserved as artifacts).
 
----
 
 ## Project layout (example)
 
@@ -47,7 +43,7 @@ Only examples shown — content and paths in your repository may vary.
 └── (dev, proc, sys, usr) # other standard FHS entries
 ```
 
----
+
 
 ## Getting started — quick outline
 
@@ -72,7 +68,7 @@ Only examples shown — content and paths in your repository may vary.
    * Kernel command line points to NFS root (e.g. `root=/dev/nfs nfsroot=192.168.1.8:/srv/rootfs,vers=3,proto=tcp init=/sbin/<arch>-init`).
    * Client `init` (Python) runs early and performs `tmpfs` mounts + `MS_BIND` of `/etc/python/<arch>/usr` → `/usr` and `/etc/clib/<arch>` → `/lib`, mounts `/proc` and `/sys`, validates interpreter, then forks/execs `/bin/shell`. Parent (PID 1) remains to reap children.
 
----
+
 
 ## How to add or update programs
 
@@ -80,7 +76,6 @@ Only examples shown — content and paths in your repository may vary.
 * **Native extensions**: compile per-architecture and stage compiled `.so` files under `/etc/python/<arch>/usr/lib/...` and corresponding C libraries under `/etc/clib/<arch>/`.
 * **Atomic deployment**: publish to a versioned directory then switch a symlink like `current -> vN` or use `rsync --delay-updates` to avoid partially visible updates.
 
----
 
 ## Validation & smoke tests (recommended)
 
@@ -108,7 +103,7 @@ ldd /usr/bin/python3
 cat /proc/self/mounts
 ```
 
----
+
 
 ## Runtime notes & rationale (brief)
 
@@ -116,7 +111,7 @@ cat /proc/self/mounts
 * **Why per-arch init?** Init is PID 1 and must be executable immediately after `execve` by the kernel—its interpreter must be available. Per-arch init scripts carry shebangs pointing at their native `/etc/python/<arch>/usr/bin/python3` so the kernel launches a compatible interpreter for PID 1.
 * **ELF re-pathing**: required because PT_INTERP/RUNPATH metadata must match the client assembled view (`/lib`) after init has mounted per-arch libraries. Patching is done at staging so clients work deterministically.
 
----
+
 
 ## Troubleshooting (common)
 
@@ -125,7 +120,6 @@ cat /proc/self/mounts
 * Missing modules like `_posixsubprocess` or `_ctypes`: ensure staged Python stdlib and `lib-dynload` were copied for the correct Python version and arch.
 * `mount tmpfs` errors: confirm kernel supports tmpfs and that init uses raw libc/syscalls (no external mount binary required).
 
----
 
 ## Contributing
 
@@ -134,7 +128,7 @@ cat /proc/self/mounts
 * Include tests, `readelf` outputs, and checksums whenever you add or modify an interpreter or C libraries.
 * Submit PRs with clear description and a short test plan.
 
----
+
 
 ## License & Support
 
